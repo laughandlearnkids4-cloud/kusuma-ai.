@@ -2,31 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Kusuma AI – Voice Calculator</title>
-  <link rel="stylesheet" href="style.css"/>
+  <title>AI Voice Calculator</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h3>History</h3>
+    <ul id="historyList"></ul>
+  </aside>
+
+  <!-- Chat App -->
   <div class="app">
-    <h1>AI Calculator</h1>
+    <header>AI Calculator</header>
 
-    <div class="ring" id="micBtn">
-      <div class="mic">🎤</div>
-    </div>
+    <main id="chatBox"></main>
 
-    <div class="status" id="status">Tap the circle and speak</div>
-    <div class="response" id="response"></div>
-
-    <div class="rating" id="rating">
-      <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
-    </div>
-
-    <div class="history" id="history">
-      <strong>History</strong>
-    </div>
+    <footer class="chat-input">
+      <button id="micBtn">🎤</button>
+      <input id="userInput" placeholder="Ask a math question…" />
+      <button onclick="sendMessage()">➤</button>
+    </footer>
   </div>
 
-  <script src="script.js"></script>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>

@@ -1,107 +1,104 @@
-   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const chatBox = document.getElementById("chatBox");
+const input = document.getElementById("userInput");
+const historyList = document.getElementById("historyList");
+
+let conversations = JSON.parse(localStorage.getItem("conversations")) || [];
+let currentChat = [];
+
+// Load sidebar
+renderSidebar();
+
+function renderSidebar() {
+  historyList.innerHTML = "";
+  conversations.forEach((conv, index) => {
+    const li = document.createElement("li");
+    li.innerText = conv[0]?.text || "Conversation";
+    li.onclick = () => loadConversation(index);
+    historyList.appendChild(li);
+  });
+}
+
+function loadConversation(index) {
+  chatBox.innerHTML = "";
+  currentChat = conversations[index];
+  currentChat.forEach(m => addMessage(m.text, m.sender, false));
+}
+
+function addMessage(text, sender, save = true) {
+  const div = document.createElement("div");
+  div.className = `message ${sender}`;
+  div.innerText = text;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  if (save) {
+    currentChat.push({ text, sender });
+  }
+
+  if (sender === "bot") speak(text);
+}
+
+function sendMessage(textFromVoice = null) {
+  const text = textFromVoice || input.value.trim();
+  if (!text) return;
+
+  addMessage(text, "user");
+  input.value = "";
+
+  setTimeout(() => {
+    const reply = aiCalculate(text.toLowerCase());
+    addMessage(reply, "bot");
+    saveConversation();
+  }, 300);
+}
+
+function saveConversation() {
+  if (!conversations.includes(currentChat)) {
+    conversations.push(currentChat);
+  }
+  localStorage.setItem("conversations", JSON.stringify(conversations));
+  renderSidebar();
+}
+
+// 🧮 AI logic
+function aiCalculate(text) {
+  try {
+    text = text
+      .replace("plus", "+")
+      .replace("minus", "-")
+      .replace("times", "*")
+      .replace("multiply", "*")
+      .replace("divide", "/")
+      .replace("by", "")
+      .replace("power", "**");
+
+    return eval(text).toString();
+  } catch {
+    return "Sorry, I couldn't understand that.";
+  }
+}
+
+const SpeechRecognition =
+  window.SpeechRecognition || window.webkitSpeechRecognition;
+
 const recognition = new SpeechRecognition();
-recognition.lang = 'en-US';
+recognition.lang = "en-US";
 
-const micBtn = document.getElementById('micBtn');
-const statusEl = document.getElementById('status');
-const responseEl = document.getElementById('response');
-const historyEl = document.getElementById('history');
-const ratingEl = document.getElementById('rating');
-
-let exitConfirm = false;
-
-micBtn.onclick = () => {
+document.getElementById("micBtn").onclick = () => {
   recognition.start();
-  micBtn.classList.add('listening');
-  statusEl.textContent = 'Listening…';
 };
 
-recognition.onresult = e => {
-  const cmd = e.results[0][0].transcript.toLowerCase();
-  micBtn.classList.remove('listening');
-  handleCommand(cmd);
+recognition.onresult = (e) => {
+  sendMessage(e.results[0][0].transcript);
 };
 
-function speak(text){
-  responseEl.textContent = text;
-  const u = new SpeechSynthesisUtterance(text);
-  speechSynthesis.speak(u);
+
+function speak(text) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 1;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+  speechSynthesis.cancel(); // stop previous
+  speechSynthesis.speak(utterance);
 }
 
-function addHistory(c,r){
-  const d=document.createElement('div');
-  d.textContent = c + ' → ' + r;
-  historyEl.appendChild(d);
-}
-
-function degToRad(d){ return d*Math.PI/180; }
-
-function handleCommand(cmd){
-  let res = '';
-
-  if(cmd.includes('your name')) res = 'My name is Kusuma AI.';
-  else if(cmd.includes('created') || cmd.includes('invented'))
-    res = 'I was created by Mr. Manoj.';
-
-  else if(cmd.includes('exit')){
-    if(!exitConfirm){
-      res = 'Do you want to exit? Please confirm.';
-      exitConfirm = true;
-    }else{
-      res = 'Thank you for using Kusuma AI.';
-    }
-  }
-
-  else if(cmd.includes('percent')){
-    const n = cmd.match(/(\d+)/g);
-    if(n && n.length>=2)
-      res = `${n[0]} percent of ${n[1]} is ${(n[0]/100)*n[1]}`;
-  }
-
-  else if(cmd.includes('square root')){
-    const n = cmd.match(/(\d+)/);
-    if(n) res = `The square root of ${n[0]} is ${Math.sqrt(n[0])}`;
-  }
-
-  else if(cmd.includes('square')){
-    const n = cmd.match(/(\d+)/);
-    if(n) res = `The square of ${n[0]} is ${n[0]*n[0]}`;
-  }
-
-  else if(cmd.includes('sin')){
-    const n = cmd.match(/(\d+)/);
-    if(n) res = `The value of sine ${n[0]} degrees is ${Math.sin(degToRad(n[0])).toFixed(2)}`;
-  }
-
-  else if(cmd.includes('cos')){
-    const n = cmd.match(/(\d+)/);
-    if(n) res = `The value of cosine ${n[0]} degrees is ${Math.cos(degToRad(n[0])).toFixed(2)}`;
-  }
-
-  else if(cmd.includes('tan')){
-    const n = cmd.match(/(\d+)/);
-    if(n) res = `The value of tangent ${n[0]} degrees is ${Math.tan(degToRad(n[0])).toFixed(2)}`;
-  }
-
-  else if(cmd.includes('cone volume')){
-    const n = cmd.match(/(\d+)/g);
-    if(n && n.length>=2)
-      res = `The volume of the cone is ${(1/3*Math.PI*n[0]*n[0]*n[1]).toFixed(2)} cubic units`;
-  }
-
-  else res = 'Please say a valid mathematical command.';
-
-  speak(res);
-  addHistory(cmd,res);
-  ratingEl.style.display='block';
-}
-
-// rating
-document.querySelectorAll('.rating span').forEach((s,i)=>{
-  s.onclick=()=>{
-    document.querySelectorAll('.rating span').forEach((x,j)=>{
-      x.classList.toggle('active',j<=i);
-    });
-    speak('Thank you for your feedback.');
-  };
-});
